@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Free Fire Mega Engine - Rehan YT Edition</title>
+    <style>
+        body, html { margin: 0; padding: 0; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; background: #000; user-select: none; color: white; }
+        
+        /* GENERAL UI & ANIMATIONS */
+        #lobby-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; }
+        .interactive { pointer-events: auto; }
+        
+        /* TOP BAR */
+        .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 15px 30px; background: linear-gradient(to bottom, rgba(0,0,0,0.85), rgba(0,0,0,0)); }
+        .player-info { background: rgba(15, 15, 15, 0.85); padding: 10px 20px; border-radius: 5px; border-left: 5px solid #ff4500; cursor: pointer; display: flex; gap: 15px; align-items: center; }
+        .player-name { font-weight: bold; font-size: 18px; color: #ffcc00; }
+        .player-level { font-size: 12px; color: #aaa; }
+        .top-icons { display: flex; gap: 15px; align-items: center; }
+        .sf-btn { background: #00ff66; color: black; font-weight: bold; padding: 6px 12px; border-radius: 4px; border: 2px solid white; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+
+        /* FRIEND CHAT HEAD BUTTON */
+        .friend-icon-btn { background: rgba(20,20,20,0.9); border: 1px solid #ff4500; padding: 8px; border-radius: 5px; cursor: pointer; font-size: 20px; }
+
+        /* MENUS & SIDEBARS */
+        .left-menu { display: flex; flex-direction: column; gap: 10px; margin-left: 30px; }
+        .right-sidebar { position: absolute; right: 20px; top: 100px; width: 180px; background: rgba(10,10,10,0.85); border: 1px solid #333; border-radius: 5px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .friend-row { display: flex; justify-content: space-between; align-items: center; background: #222; padding: 5px 8px; border-radius: 3px; font-size: 13px; }
+        .add-sf-btn { background: #ff5500; border: none; color: white; padding: 2px 6px; font-size: 11px; cursor: pointer; border-radius: 2px; }
+
+        .menu-btn { background: linear-gradient(135deg, #111, #252525); color: white; border: 2px solid #ff4500; padding: 12px 24px; font-size: 14px; font-weight: bold; cursor: pointer; border-radius: 4px; text-transform: uppercase; width: 150px; text-align: center; }
+        .menu-btn:hover { background: #ff4500; }
+        .start-btn { background: linear-gradient(to bottom, #ffe600, #ff5500); color: black; border: 3px solid #fff; padding: 15px 70px; font-size: 30px; font-weight: 900; cursor: pointer; border-radius: 10px; text-transform: uppercase; letter-spacing: 2px; box-shadow: 0 0 25px rgba(255,85,0,0.6); }
+
+        /* BOTTOM HUD BUTTONS FOR REQUESTS */
+        .bottom-left-hub { position: absolute; bottom: 20px; left: 30px; display: flex; gap: 10px; }
+        .ri-btn { background: #007aff; color: white; font-weight: bold; padding: 10px 20px; border: 1px solid white; border-radius: 4px; cursor: pointer; text-transform: uppercase; }
+
+        /* POPUPS */
+        .popup { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 380px; background: rgba(10, 10, 10, 0.98); border: 3px solid #ff4500; border-radius: 10px; padding: 20px; display: none; z-index: 20; box-shadow: 0 0 30px rgba(0,0,0,0.9); text-align: center; }
+        .popup-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 15px; }
+        .popup-title { font-size: 20px; font-weight: bold; color: #ff4500; text-transform: uppercase; }
+        .close-btn { background: #ff3b30; color: white; border: none; padding: 5px 10px; cursor: pointer; font-weight: bold; }
+
+        /* HAWA MEIN GHUMNE WALI RANK ANIMATION BOX */
+        .rank-box-wrapper { width: 160px; height: 160px; margin: 15px auto; perspective: 400px; }
+        .rank-card-3d { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; animation: spinAir 4s infinite linear; }
+        
+        @keyframes spinAir {
+            0% { transform: rotateY(0deg) translateY(0px); }
+            50% { transform: rotateY(180deg) translateY(-10px); }
+            100% { transform: rotateY(360deg) translateY(0px); }
+        }
+
+        .rank-emblem { position: absolute; width: 100%; height: 100%; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 60px; backface-visibility: visible; box-shadow: 0 0 30px rgba(255,255,255,0.2); }
+        
+        /* BRONZE, SILVER, GOLD, DIAMOND STYLING (MATCHING SCREENSHOTS) */
+        .b-style { background: radial-gradient(circle, #cd7f32, #000); border: 4px solid #cd7f32; }
+        .s-style { background: radial-gradient(circle, #b0c4de, #000); border: 4px solid #b0c4de; box-shadow: 0 0 35px #b0c4de; }
+        .g-style { background: radial-gradient(circle, #ffd700, #000); border: 4px solid #ffd700; box-shadow: 0 0 45px #ffd700; }
+        .d-style { background: radial-gradient(circle, #00ffff, #ff007f); border: 4px solid #00ffff; box-shadow: 0 0 50px #00ffff; }
+
+        /* PROGRESS BAR */
+        .progress-bg { width: 85%; height: 12px; background: #222; margin: 15px auto; border-radius: 10px; overflow: hidden; border: 1px solid #444; }
+        .progress-fill { height: 100%; width: 0%; background: linear-gradient(to right, #ff5500, #ffcc00); transition: width 0.4s; }
+
+        /* REALISTIC SF TOP UP MENU */
+        .payment-option { background: #222; margin: 10px 0; padding: 12px; border-radius: 5px; cursor: pointer; border: 1px solid #444; text-align: left; font-weight: bold; font-size: 15px; display: flex; justify-content: space-between; }
+        .payment-option:hover { border-color: #00ff66; background: #2a2a2a; }
+
+        /* BATTLE HUD ELEMENTS */
+        #battle-hud { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; display: none; pointer-events: none; }
+        .top-counters { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 20px; font-size: 20px; font-weight: bold; background: rgba(0,0,0,0.6); padding: 8px 25px; border-radius: 5px; }
+        .alive-box { color: #00ff66; }
+        .kill-box { color: #ff007f; }
+
+        .health-container { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); width: 320px; background: rgba(0,0,0,0.6); padding: 4px; border-radius: 4px; border: 1px solid #666; }
+        .health-bar { height: 15px; width: 100%; background: linear-gradient(to right, #00e5ff, #00ff66); transition: width 0.1s; }
+        .health-text { position: absolute; width: 100%; text-align: center; font-size: 12px; font-weight: bold; top: 4px; text-shadow: 1px 1px 2px #000; }
+
+        .crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 10px; height: 10px; border: 2px solid #00ff66; border-radius: 50%; }
+        #scope-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, transparent 22%, rgba(0,0,0,0.97) 26%); display: none; }
+
+        /* FLIGHT SYSTEM */
+        #flight-ui { position: absolute; top: 25%; left: 50%; transform: translateX(-50%); text-align: center; display: none; z-index: 8; }
+        .jump-btn-br { margin-top: 20px; background: #ff4500; color: white; border: 3px solid #fff; padding: 12px 40px; font-size: 20px; font-weight: bold; border-radius: 5px; cursor: pointer; pointer-events: auto; }
+
+        /* END GAME PANEL */
+        #end-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); z-index: 30; display: none; flex-direction: column; align-items: center; justify-content: center; }
+        #end-title { font-size: 80px; font-weight: 900; letter-spacing: 5px; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <div id="lobby-ui">
+        <div class="top-bar">
+            <div class="player-info interactive" onclick="openPopup('profile-popup')">
+                <div class="friend-icon-btn">??????</div>
+                <div>
+                    <div class="player-name">REHAN YT</div>
+                    <div class="player-level">LVL <span id="l-lvl">1</span> | <span id="l-rank">Bronze I</span></div>
+                </div>
+            </div>
+            
+            <div class="top-icons">
+                <div class="sf-btn interactive" onclick="openPopup('sf-popup')">?? <span id="sf-balance">0</span> SF</div>
+                <div style="background:rgba(0,0,0,0.6); padding:5px 15px; border-radius:15px; font-weight:bold;">EXP: <span id="l-exp">0</span></div>
+            </div>
+        </div>
+
+        <div class="left-menu">
+            <button class="menu-btn interactive" onclick="openPopup('rank-popup')">RANK-S SYSTEM</button>
+            <button class="menu-btn interactive" onclick="openPopup('sof-popup')">SOF STORE</button>
+            <button class="menu-btn interactive" onclick="openPopup('profile-popup')">PROFILE</button>
+        </div>
+
+        <div class="right-sidebar interactive">
+            <div style="font-weight:bold; font-size:12px; border-bottom:1px solid #444; padding-bottom:4px; text-align:center;">ONLINE FRIENDS</div>
+            <div id="friends-list-container">
+                <div class="friend-row"><span>Pro_Ayan</span><button class="add-sf-btn" onclick="inviteFriend('Pro_Ayan')">+SF</button></div>
+                <div class="friend-row"><span>King_Ali</span><button class="add-sf-btn" onclick="inviteFriend('King_Ali')">+SF</button></div>
+            </div>
+        </div>
+
+        <div class="bottom-left-hub">
+            <button class="ri-btn interactive" onclick="openPopup('ri-popup')">RI Requests (<span id="ri-count">1</span>)</button>
+        </div>
+
+        <div class="bottom-bar">
+            <button class="start-btn interactive" onclick="startBrMatch()">Start Match</button>
+        </div>
+    </div>
+
+    <div id="rank-popup" class="popup">
+        <div class="popup-header">
+            <div class="popup-title">Rank Evolution</div>
+            <button class="close-btn" onclick="closePopup('rank-popup')">X</button>
+        </div>
+        <div class="rank-box-wrapper">
+            <div class="rank-card-3d">
+                <div class="rank-emblem b-style" id="p-rank-logo">??</div>
+            </div>
+        </div>
+        <div class="rank-title" style="font-size:26px; font-weight:bold; color:#fff;" id="p-rank-title">BRONZE I</div>
+        <div style="margin-top:5px; font-weight:bold; color:#ffcc00;">EXP: <span id="p-exp">0</span> / <span id="p-needed">300</span></div>
+        <div class="progress-bg"><div class="progress-fill" id="p-bar-fill"></div></div>
+        <div style="font-size:12px; color:#888;" id="p-hint">Earn 300 EXP to clear Bronze!</div>
+    </div>
+
+    <div id="sf-popup" class="popup">
+        <div class="popup-header">
+            <div class="popup-title">SF TOP UP SYSTEM</div>
+            <button class="close-btn" onclick="closePopup('sf-popup')">X</button>
+        </div>
+        <div style="background:#222; padding:10px; border-radius:5px; margin-bottom:15px; font-weight:bold; font-size:18px; color:#00ff66;">14 SF = 10 RS</div>
+        <div class="payment-option" onclick="triggerRealBankTx('Easypaisa')"><span>Easypaisa Mobile</span> <span style="color:#00ff66;">10 RS</span></div>
+        <div class="payment-option" onclick="triggerRealBankTx('JazzCash')"><span>JazzCash Wallet</span> <span style="color:#00ff66;">10 RS</span></div>
+        <div class="payment-option" onclick="triggerRealBankTx('UBL Bank')"><span>UBL Bank Transfer</span> <span style="color:#00ff66;">10 RS</span></div>
+    </div>
+
+    <div id="sof-popup" class="popup">
+        <div class="popup-header">
+            <div class="popup-title">SOF Premium Outfits</div>
+            <button class="close-btn" onclick="closePopup('sof-popup')">X</button>
+        </div>
+        <div style="padding:10px; border:1px solid #444; background:#111; border-radius:5px;">
+            <div style="font-size:40px;">???</div>
+            <div style="font-weight:bold; margin:8px 0; font-size:16px;">Golden Cobra Battle Bundle</div>
+            <div style="color:#ffcc00; font-weight:bold; margin-bottom:12px;">Price: 14 SF</div>
+            <button class="interactive" style="background:#ff5500; color:white; font-weight:bold; padding:8px 25px; border:none; border-radius:4px; cursor:pointer;" onclick="buyBundleClothes()">BUY & EQUIP PERMANENTLY</button>
+        </div>
+    </div>
+
+    <div id="ri-popup" class="popup">
+        <div class="popup-header">
+            <div class="popup-title">RI Friendship Lobby</div>
+            <button class="close-btn" onclick="closePopup('ri-popup')">X</button>
+        </div>
+        <input type="text" id="uid-search" placeholder="Enter Player UID..." style="width:75%; padding:8px; background:#222; border:1px solid #444; color:white; border-radius:4px; margin-bottom:15px;">
+        <button class="interactive" style="padding:7px 12px; background:#ff4500; border:none; color:white; font-weight:bold; cursor:pointer;" onclick="searchAndSendUid()">SEND</button>
+        
+        <div style="background:#1a1a1a; padding:10px; border-radius:5px; display:flex; justify-content:between; align-items:center; margin-top:5px;" id="ri-request-box">
+            <div style="font-size:14px;"><strong>Zayan_YT</strong> (UID: 9842)</div>
+            <div style="display:flex; gap:5px;">
+                <button style="background:#00ff66; border:none; padding:4px 8px; cursor:pointer; font-weight:bold;" onclick="acceptFriend()">??</button>
+                <button style="background:#ff3b30; border:none; padding:4px 8px; cursor:pointer; font-weight:bold; color:white;" onclick="rejectFriend()">?</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="profile-popup" class="popup">
+        <div class="popup-header">
+            <div class="popup-title">Account Profiles</div>
+            <button class="close-btn" onclick="closePopup('profile-popup')">X</button>
+        </div>
+        <div style="text-align:left; line-height:1.8;">
+            <p><strong>IGN:</strong> REHAN YT</p>
+            <p><strong>UID:</strong> 478291043</p>
+            <p><strong>Current Rank:</strong> <span id="p-prof-rank">Bronze I</span></p>
+            <p><strong>Outfit Status:</strong> <span id="p-outfit-status" style="color:#ff3b30;">Default Clothes</span></p>
+        </div>
+    </div>
+
+    <div id="flight-ui">
+        <div style="font-size:24px; font-weight:bold; background:rgba(0,0,0,0.8); padding:10px 30px; border-radius:5px; border:2px solid #ffe600;" id="flight-text">Bermuda Plane Entering... Players: 70/70</div>
+        <button class="jump-btn-br" id="jump-btn" onclick="triggerParachuteEject()">EJECT PARACHUTE</button>
+    </div>
+
+    <div id="battle-hud">
+        <div class="crosshair"></div>
+        <div id="scope-overlay"></div>
+        <div class="top-counters">
+            <div class="alive-box">?? ALIVE: <span id="hud-alive">70</span></div>
+            <div class="kill-box">?? KILLS: <span id="hud-kills">0</span></div>
+        </div>
+        <div class="health-container">
+            <div class="health-bar" id="hp-fluid"></div>
+            <div class="health-text">HP <span id="hp-txt">300</span> / 300</div>
+        </div>
+    </div>
+
+    <div id="end-screen">
+        <div id="end-title">WANS</div>
+        <p id="end-subtitle" style="font-size:20px; margin:20px 0;"></p>
+        <button class="interactive" style="background:#ff5500; color:white; font-weight:bold; border:none; padding:12px 40px; font-size:18px; cursor:pointer; border-radius:4px;" onclick="exitToLobbyScreen()">Return To Lobby</button>
+    </div>
+
+    <script>
+        // MASTER DYNAMIC MEMORY (SAVING PROGRESS VARIABLES COMFORTABLY)
+        let coreMemory = {
+            exp: 0, level: 1, rank: "Bronze I", sf: 0, equippedPremiumClothes: false
+        };
+
+        let scene, camera, renderer, player;
+        let runningMatch = false, playMode = "lobby"; 
+        let plane, parachute, landscape;
+        let foes = [];
+        
+        let hp = 300, liveCount = 70, killCount = 0;
+        let isScopedView = false, jumpTimer = 0, isJumping = false;
+        
+        let inputKeys = { w: false, a: false, s: false, d: false, ' ': false };
+
+        function initEngine() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x100902); // Luxury Dark Lobby theme
+
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 2.2, 5);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Strict zero lag protection capping
+            document.body.appendChild(renderer.domElement);
+
+            // High Precision Lights
+            scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+            let skySun = new THREE.DirectionalLight(0xffaa44, 0.85);
+            skySun.position.set(5, 20, 5);
+            scene.add(skySun);
+
+            buildLobbyEnvironment();
+            generatePlayerMeshModel();
+
+            // Hardware Action Event listeners
+            window.addEventListener('mousedown', mouseActionsHandler);
+            window.addEventListener('contextmenu', e => e.preventDefault()); // Disabling right click popups inside window
+            window.addEventListener('keydown', e => { if(e.key===' ') triggerSpaceJump(); else if(e.key.toLowerCase() in inputKeys) inputKeys[e.key.toLowerCase()]=true; });
+            window.addEventListener('keyup', e => { if(e.key.toLowerCase() in inputKeys) inputKeys[e.key.toLowerCase()]=false; });
+            window.addEventListener('resize', responsiveResize);
+
+            refreshUiLayers();
+            engineLoop();
+        }
+
+        function buildLobbyEnvironment() {
+            let platform = new THREE.Mesh(new THREE.CylinderGeometry(2, 2.2, 0.15, 32), new THREE.MeshStandardMaterial({ color: 0x1c1c1c, roughness: 0.3 }));
+            platform.position.y = -0.08;
+            scene.add(platform);
+        }
+
+        function generatePlayerMeshModel() {
+            player = new THREE.Group();
+            
+            let head = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), new THREE.MeshStandardMaterial({ color: 0xffdbac }));
+            head.position.y = 1.6;
+            
+            // Checking if Permanent Clothes Bundle is owned/equipped
+            let shirtColor = coreMemory.equippedPremiumClothes ? 0xffcc00 : 0x151515; // Golden Clothes vs Default Grey
+            let pantsColor = coreMemory.equippedPremiumClothes ? 0xff0055 : 0x051e36;
+            
+            let body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.7, 0.3), new THREE.MeshStandardMaterial({ color: shirtColor }));
+            body.position.y = 1.1;
+            
+            let legs = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.6, 0.25), new THREE.MeshStandardMaterial({ color: pantsColor }));
+            legs.position.y = 0.45;
+
+            // Permanent Integrated Sniper System on Model Body Group
+            let sniperBarrel = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 1.0), new THREE.MeshStandardMaterial({ color: 0x224411 }));
+            sniperBarrel.position.set(0.35, 1.1, -0.4);
+            player.add(head, body, legs, sniperBarrel);
+
+            player.position.set(0, 0, 0);
+            scene.add(player);
+        }
+
+        // BR PLANE TIMELINE START SEQUENCE
+        function startBrMatch() {
+            document.getElementById('lobby-ui').style.display = 'none';
+            document.getElementById('flight-ui').style.display = 'block';
+            document.getElementById('flight-text').innerText = "Bermuda Plane Flying... (70 Alive Players)";
+            document.getElementById('jump-btn').style.display = 'none';
+            
+            playMode = "plane";
+            runningMatch = true;
+            scene.background = new THREE.Color(0x4fa3d1);
+
+            // Plane Object Creation
+            plane = new THREE.Group();
+            let fuselage = new THREE.Mesh(new THREE.CylinderGeometry(1.8, 1.8, 9, 16), new THREE.MeshStandardMaterial({ color: 0xeeeeee }));
+            fuselage.rotation.x = Math.PI / 2;
+            let wingspan = new THREE.Mesh(new THREE.BoxGeometry(11, 0.15, 2.5), new THREE.MeshStandardMaterial({ color: 0xcccccc }));
+            plane.add(fuselage, wingspan);
+            plane.position.set(0, 40, 60);
+            scene.add(plane);
+
+            player.position.set(0, 40, 60);
+            camera.position.set(0, 46, 75);
+
+            // 5 Second mark for Parachute jump button deployment option
+            setTimeout(() => {
+                if(playMode === "plane") {
+                    document.getElementById('jump-btn').style.display = 'inline-block';
+                }
+            }, 5000);
+        }
+
+        function triggerParachuteEject() {
+            document.getElementById('jump-btn').style.display = 'none';
+            document.getElementById('flight-text').innerText = "Freefall diving at 1x extra high speed!";
+            playMode = "diving";
+
+            // 3 Second mark for Automatic Parachute open deployment sequence
+            setTimeout(() => {
+                playMode = "parachuting";
+                document.getElementById('flight-text').innerText = "Parachute Deployed! Gliding safely...";
+                parachute = new THREE.Mesh(new THREE.ConeGeometry(2.2, 0.8, 16), new THREE.MeshBasicMaterial({ color: 0xff4500 }));
+                parachute.position.set(player.position.x, player.position.y + 2.8, player.position.z);
+                scene.add(parachute);
+            }, 3000);
+        }
+
+        function createGroundWorldMap() {
+            let grass = new THREE.Mesh(new THREE.PlaneGeometry(160, 160), new THREE.MeshStandardMaterial({ color: 0x3b6122, roughness: 0.9 }));
+            grass.rotation.x = -Math.PI / 2;
+            scene.add(grass);
+
+            foes = [];
+            liveCount = 70;
+            killCount = 0;
+            document.getElementById('hud-alive').innerText = liveCount;
+            document.getElementById('hud-kills').innerText = killCount;
+
+            // Spawning Real-like moving targets with Human parameters
+            for(let i=0; i<6; i++) {
+                let npc = new THREE.Group();
+                let nh = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), new THREE.MeshStandardMaterial({ color: 0xffccd5 }));
+                let nb = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.7, 0.3), new THREE.MeshStandardMaterial({ color: 0xff3b30 }));
+                let nl = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.6, 0.25), new THREE.MeshStandardMaterial({ color: 0x111111 }));
+                nh.position.y = 1.6; nb.position.y = 1.1; nl.position.y = 0.45;
+                
+                let gun = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.12, 0.22), new THREE.MeshStandardMaterial({ color: 0x777777 }));
+                gun.position.set(0.38, 1.1, -0.2);
+                npc.add(nh, nb, nl, gun);
+
+                npc.position.set((Math.random() - 0.5) * 50, 0, (Math.random() - 0.5) * 50 - 25);
+                scene.add(npc);
+                foes.push(npc);
+            }
+        }
+
+        // TRIGGER SPACE JUMP SYSTEM WITH LEG ANIMATION (1.5s TIMING WINDOW)
+        function triggerSpaceJump() {
+            if (playMode !== "grounded" || isJumping) return;
+            isJumping = true;
+            jumpTimer = 0;
+
+            // Animate legs: Move one foot forward, one backward subtly inside group matrix transformation
+            player.children[2].position.z = 0.15; // Leg skew shift simulation animation effect
+            player.children[2].rotation.x = 0.2;
+        }
+
+        // MOUSE SYSTEM INTERACTION (Left Scope, Right Shoot)
+        function mouseActionsHandler(e) {
+            if(playMode !== "grounded") return;
+
+            if(e.button === 0) { 
+                // LEFT CLICK -> SNIPER SCOPE OVERLAY VIEW TOGGLE
+                isScopedView = !isScopedView;
+                document.getElementById('scope-overlay').style.display = isScopedView ? 'block' : 'none';
+                camera.fov = isScopedView ? 10 : 60; // Max telephoto zoom vs wide ground field
+                camera.updateProjectionMatrix();
+            } 
+            else if(e.button === 2) { 
+                // RIGHT CLICK -> SYSTEM SHOOT FIRE GUNSHOT
+                executeSniperShot();
+            }
+        }
+
+        function executeSniperShot() {
+            let hitIdx = -1;
+            for(let i=0; i<foes.length; i++) {
+                let fPos = foes[i].position;
+                let pPos = player.position;
+                
+                // Perfect directional tracking proxy calculation check
+                if(Math.abs(pPos.x - fPos.x) < 2.5 && fPos.z < pPos.z) {
+                    hitIdx = i;
+                    break;
+                }
+            }
+
+            if(hitIdx !== -1) {
+                scene.remove(foes[hitIdx]);
+                foes.splice(hitIdx, 1);
+                
+                killCount++;
+                liveCount--;
+                document.getElementById('hud-kills').innerText = killCount;
+                document.getElementById('hud-alive').innerText = liveCount;
+            }
+
+            if(foes.length === 0) {
+                terminateCurrentMatch("WANS", "BOOYAH! Perfect Victory. Cleaned the Server! (+60 EXP)");
+                coreMemory.exp += 60;
+                processRankCalculations();
+            }
+        }
+
+        // ENGINE RUNTIME REALTIME STATE LOOP MACHINE
+        function engineLoop() {
+            requestAnimationFrame(engineLoop);
+
+            if (!runningMatch) {
+                player.rotation.y += 0.005; // Idle main lobby beautiful rotations showcase
+            } else {
+                if (playMode === "plane") {
+                    plane.position.z -= 0.18; // Constant plane speed over sky route
+                    player.position.set(plane.position.x, plane.position.y, plane.position.z);
+                    camera.position.set(player.position.x, player.position.y + 5, player.position.z + 12);
+                    camera.lookAt(player.position);
+                } 
+                else if (playMode === "diving") {
+                    player.position.y -= 0.40; // Extremely rapid fall trajectory steps
+                    camera.position.set(player.position.x, player.position.y + 4, player.position.z + 6);
+                    camera.lookAt(player.position);
+                    if(player.position.y <= 18) triggerParachuteEject();
+                } 
+                else if (playMode === "parachuting") {
+                    player.position.y -= 0.09; // Low speed safe landing glide step calibration
+                    parachute.position.set(player.position.x, player.position.y + 2.8, player.position.z);
+                    camera.position.set(player.position.x, player.position.y + 4.5, player.position.z + 7.5);
+                    camera.lookAt(player.position);
+
+                    if(player.position.y <= 0.02) { // Landed cleanly on green grass field
+                        player.position.y = 0;
+                        scene.remove(parachute);
+                        scene.remove(plane);
+                        document.getElementById('flight-ui').style.display = 'none';
+                        document.getElementById('battle-hud').style.display = 'block';
+                        
+                        createGroundWorldMap();
+                        playMode = "grounded";
+                        hp = 300;
+                        updateHpLayout();
+                    }
+                } 
+                else if (playMode === "grounded") {
+                    // Standard Movement Loop mechanics (1.3x faster pacing implemented)
+                    let normalWalkVelocity = 0.16;
+                    if (inputKeys.w) player.position.z -= normalWalkVelocity;
+                    if (inputKeys.s) player.position.z += normalWalkVelocity;
+                    if (inputKeys.a) player.position.x -= normalWalkVelocity;
+                    if (inputKeys.d) player.position.x += normalWalkVelocity;
+
+                    // Space Jump Animation timeline calculation mechanics
+                    if (isJumping) {
+                        jumpTimer += 0.025;
+                        player.position.y = Math.sin(parseFloat(jumpTimer) * Math.PI) * 1.5; // Jump curve formula elevation height
+                        
+                        if (jumpTimer >= 1.0) { // 1.5 Seconds window loop complete cap
+                            player.position.y = 0;
+                            isJumping = false;
+                            player.children[2].position.z = 0; // Restore leg positions back perfectly to original values
+                            player.children[2].rotation.x = 0;
+                        }
+                    }
+
+                    // Smart Target Bots path processing routines
+                    foes.forEach(bot => {
+                        bot.lookAt(player.position);
+                        bot.position.z += 0.035; // Bots march closer relentlessly with Desert Eagles loaded
+
+                        // Damage check within danger contact boundaries
+                        if (player.position.distanceTo(bot.position) < 2.2) {
+                            hp -= 0.8;
+                            updateHpLayout();
+                        }
+                    });
+
+                    if (hp <= 0) {
+                        terminateCurrentMatch("BLACK", "Eliminated by hostile forces! Try again.");
+                    }
+
+                    // CAMERA EYE MATRICES
+                    if (!isScopedView) {
+                        camera.position.set(player.position.x, player.position.y + 2.4, player.position.z + 4.6);
+                        camera.lookAt(player.position.x, player.position.y + 1.2, player.position.z);
+                    } else {
+                        camera.position.set(player.position.x, player.position.y + 1.5, player.position.z - 0.1);
+                        camera.lookAt(player.position.x, player.position.y + 1.5, player.position.z - 25);
+                    }
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function updateHpLayout() {
+            hp = Math.max(0, hp);
+            document.getElementById('hp-fluid').style.width = (hp / 300) * 100 + "%";
+            document.getElementById('hp-txt').innerText = Math.round(hp);
+        }
+
+        function terminateCurrentMatch(flag, statement) {
+            runningMatch = false;
+            if(isScopedView) { isScopedView=false; camera.fov=60; document.getElementById('scope-overlay').style.display='none'; camera.updateProjectionMatrix(); }
+            
+            document.getElementById('battle-hud').style.display = 'none';
+            let panel = document.getElementById('end-screen');
+            let textHead = document.getElementById('end-title');
+            
+            textHead.innerText = flag;
+            textHead.style.color = (flag === "WANS") ? "#00ff66" : "#ff2200";
+            document.getElementById('end-subtitle').innerText = statement;
+            panel.style.display = 'flex';
+        }
+
+        function exitToLobbyScreen() {
+            document.getElementById('end-screen').style.display = 'none';
+            document.getElementById('lobby-ui').style.display = 'flex';
+            playMode = "lobby";
+            
+            while(scene.children.length > 0){ scene.remove(scene.children[0]); }
+            initEngine();
+        }
+
+        // RANK TIERS & REVENUE CONVERSION MATHEMATICAL PROCESSING
+        function processRankCalculations() {
+            let logo = document.getElementById('p-rank-logo');
+            
+            // EXPERIMENTAL EVOLUTION TIERS (As per screenshots)
+            if (coreMemory.exp >= 17000) {
+                coreMemory.rank = "Coming Soon";
+                logo.innerText = "?";
+                logo.className = "rank-emblem d-style";
+            } else if (coreMemory.exp >= 7500) {
+                coreMemory.rank = "Diamond Ban";
+                logo.innerText = "??";
+                logo.className = "rank-emblem d-style";
+            } else if (coreMemory.exp >= 1500) {
+                coreMemory.rank = "Gold Elite";
+                logo.innerText = "??";
+                logo.className = "rank-emblem g-style";
+            } else if (coreMemory.exp >= 300) {
+                coreMemory.rank = "Silver X";
+                logo.innerText = "???";
+                logo.className = "rank-emblem s-style";
+            } else {
+                coreMemory.rank = "Bronze I";
+                logo.innerText = "??";
+                logo.className = "rank-emblem b-style";
+            }
+
+            coreMemory.level = Math.floor(coreMemory.exp / 200) + 1;
+            refreshUiLayers();
+        }
+
+        function refreshUiLayers() {
+            document.getElementById('l-lvl').innerText = coreMemory.level;
+            document.getElementById('l-rank').innerText = coreMemory.rank;
+            document.getElementById('l-exp').innerText = coreMemory.exp;
+            document.getElementById('sf-balance').innerText = coreMemory.sf;
+
+            document.getElementById('p-rank-title').innerText = coreMemory.rank;
+            document.getElementById('p-exp').innerText = coreMemory.exp;
+            
+            let req = 300;
+            if(coreMemory.rank === "Silver X") req = 1500;
+            if(coreMemory.rank === "Gold Elite") req = 7500;
+            if(coreMemory.rank === "Diamond Ban") req = 17000;
+            
+            document.getElementById('p-needed').innerText = req;
+            document.getElementById('p-hint').innerText = "Earn " + req + " EXP to clear current bracket stage!";
+            document.getElementById('p-bar-fill').style.width = Math.min((coreMemory.exp / req) * 100, 100) + "%";
+
+            document.getElementById('p-prof-rank').innerText = coreMemory.rank;
+            document.getElementById('p-outfit-status').innerText = coreMemory.equippedPremiumClothes ? "Golden Cobra Bundle Equipped" : "Default Clothes";
+            document.getElementById('p-outfit-status').style.color = coreMemory.equippedPremiumClothes ? "#00ff66" : "#ff3b30";
+        }
+
+        // REAL BANK CONVERSION TRANSMISSION SETUP SIMULATION
+        function triggerRealBankTx(gateway) {
+            let confirmation = confirm("Confirm Transaction via " + gateway + "?\nAction: 10 RS will be deducted to acquire 14 SF.");
+            if(confirmation) {
+                coreMemory.sf += 14;
+                alert("Payment Success!\n14 SF added. 10 RS transferred via " + gateway + " safely.");
+                refreshUiLayers();
+            }
+        }
+
+        function buyBundleClothes() {
+            if(coreMemory.sf >= 14) {
+                coreMemory.sf -= 14;
+                coreMemory.equippedPremiumClothes = true;
+                alert("Success! Permanent Premium Golden Cobra Bundle Bundle Unlocked and Equipped.");
+                
+                // Reload live player mesh instantly without stripping layout elements
+                scene.remove(player);
+                generatePlayerMeshModel();
+                refreshUiLayers();
+            } else {
+                alert("Insufficient SF Coins! Please top up from the green SF button first.");
+            }
+        }
+
+        // FRIEND UI INTERACTIONS
+        function searchAndSendUid() {
+            let val = document.getElementById('uid-search').value;
+            if(val) { alert("Lobby Request sent to UID: " + val); document.getElementById('uid-search').value=""; }
+        }
+        function inviteFriend(name) { alert("Lobby server request dispatched to " + name + " successfully!"); }
+        function acceptFriend() { 
+            alert("Request Accepted! Added to server friend circle list.");
+            document.getElementById('ri-request-box').style.display = "none";
+            document.getElementById('ri-count').innerText = "0";
+        }
+        function rejectFriend() {
+            alert("Request Deleted/Rejected.");
+            document.getElementById('ri-request-box').style.display = "none";
+            document.getElementById('ri-count').innerText = "0";
+        }
+
+        function openPopup(id) { document.getElementById(id).style.display = 'block'; if(id==='rank-popup') processRankCalculations(); }
+        function closePopup(id) { document.getElementById(id).style.display = 'none'; }
+        function responsiveResize() { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); }
+
+        window.onload = initEngine;
+    </script>
+</body>
+</html>
